@@ -275,7 +275,7 @@ declare class FastNoiseLite implements FastNoiseLite.NoiseInstance {
    * @param {number} [z] Z coordinate
    * @return {number} Noise output bounded between -1...1
    */
-  GetNoise: (x: number, y: number, z: number) => number;
+  GetNoise: (x: number, y: number, z?: number) => number;
   /**
    * @description 2D/3D warps the input position using current domain warp settings
    * @param {Vector2|Vector3} coord
