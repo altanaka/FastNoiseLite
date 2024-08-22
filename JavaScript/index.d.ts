@@ -107,7 +107,7 @@ declare namespace FastNoiseLite {
     SetDomainWarpFractalLacunarity: (lacunarity: number) => void;
     SetDomainWarpFractalGain: (gain: number) => void;
     //GetMethods
-    GetNoise: (x: number, y: number, z: number) => number; //b/w -1...1
+    GetNoise: (x: number, y: number, z?: number) => number; //b/w -1...1
     DomainWrap: (coord: Vector2 | Vector3) => void; //2D/3D warps the input position using current domain warp settings
   }
 }
