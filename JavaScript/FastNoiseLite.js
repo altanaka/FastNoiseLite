@@ -112,13 +112,22 @@ export default class FastNoiseLite {
     /**
      * @static
      * @enum {string}
-     * @type {Readonly<{FBm: string, DomainWarpIndependent: string, PingPong: string, None: string, Ridged: string, DomainWarpProgressive: string}>}
+     * @type {Readonly<{FBm: string, PingPong: string, None: string, Ridged: string}>}
      */
     static FractalType = Object.freeze({
         None: "None",
         FBm: "FBm",
         Ridged: "Ridged",
         PingPong: "PingPong",
+    });
+
+    /**
+     * @static
+     * @enum {string}
+     * @type {Readonly<{DomainWarpIndependent: string, None: string, DomainWarpProgressive: string}>}
+     */
+    static DomainWarpFractalType = Object.freeze({
+        None: "None",
         DomainWarpProgressive: "DomainWarpProgressive",
         DomainWarpIndependent: "DomainWarpIndependent",
     });
@@ -174,13 +183,15 @@ export default class FastNoiseLite {
     });
 
     /* Private */
+
+    // General
     _Seed = 1337;
     _Frequency = 0.01;
     _NoiseType = FastNoiseLite.NoiseType.OpenSimplex2;
     _RotationType3D = FastNoiseLite.RotationType3D.None;
     _TransformType3D = FastNoiseLite.TransformType3D.DefaultOpenSimplex2;
-    _DomainWarpAmp = 1.0;
 
+    // Fractal
     _FractalType = FastNoiseLite.FractalType.None;
     _Octaves = 3;
     _Lacunarity = 2.0;
@@ -190,15 +201,27 @@ export default class FastNoiseLite {
 
     _FractalBounding = 1 / 1.75;
 
+    // Cellular
     _CellularDistanceFunction = FastNoiseLite.CellularDistanceFunction.EuclideanSq;
     _CellularReturnType = FastNoiseLite.CellularReturnType.Distance;
     _CellularJitterModifier = 1.0;
 
+    // Domain Warp
     _DomainWarpType = FastNoiseLite.DomainWarpType.OpenSimplex2;
     _WarpTransformType3D = FastNoiseLite.TransformType3D.DefaultOpenSimplex2;
+    _DomainWarpAmp = 1.0;
+    _DomainWarpSeed = 1337;
+    _DomainWarpFrequency = 0.01;
+
+    //Domain Warp Fractal
+    _DomainWarpFractalType = FastNoiseLite.DomainWarpFractalType.None;
+    _DomainWarpOctaves = 3;
+    _DomainWarpLacunarity = 2.0;
+    _DomainWarpGain = 0.5;
+    _DomainWarpFractalBounding = 1 / 1.75;
 
     /**
-     * @description Create new FastNoiseLite object with optional seed
+     * @description Create a new FastNoiseLite object with an optional seed
      * @param {number} [seed]
      * @constructor
      */
@@ -365,6 +388,72 @@ export default class FastNoiseLite {
         this._DomainWarpAmp = domainWarpAmp;
     }
 
+    
+
+    /**
+     * @description Sets seed used for domain warp
+     * @remarks Default: 1337
+     * @default 1337
+     * @param {number} seed
+     */
+    SetDomainWarpSeed(seed) {
+        this._DomainWarpSeed = seed;
+    }
+
+    /**
+     * @description Sets frequency for domain warp
+     * @remarks Default: 0.01
+     * @default 0.01
+     * @param {number} frequency
+     */
+    SetDomainWarpFrequency(frequency) {
+        this._DomainWarpFrequency = frequency;
+    }
+
+        /**
+     * @description Sets method for combining octaves in domain warping fractals
+     * @remarks Default: None
+     * @default FastNoiseLite.DomainWarpFractalType.None
+     * @param {FastNoiseLite.DomainWarpFractalType} fractalType
+     */
+    SetDomainWarpFractalType(fractalType) {
+        this._DomainWarpFractalType = fractalType;
+    }
+
+    /**
+     * @description Sets octave count for domain warp fractal types
+     * @remarks Default: 3
+     * @default 3
+     * @param {number} octaves
+     */
+    SetDomainWarpFractalOctaves(octaves) {
+        this._DomainWarpOctaves = octaves;
+        this._CalculateDomainWarpFractalBounding();
+    }
+
+    /**
+     * @description Sets octave lacunarity for domain warp fractal types
+     * @remarks Default: 2.0
+     * @default 2.0
+     * @param {number} lacunarity
+     */
+    SetDomainWarpFractalLacunarity(lacunarity) {
+        this._DomainWarpLacunarity = lacunarity;
+    }
+
+    /**
+     * @description Sets octave gain for domain warp fractal types
+     * @remarks Default: 0.5
+     * @default 0.5
+     * @param {number} gain
+     */
+    SetDomainWarpFractalGain(gain) {
+        this._DomainWarpGain = gain;
+        this._CalculateDomainWarpFractalBounding();
+    }
+
+
+
     /**
      * @description 2D/3D noise at given position using current settings
      * @param {number} x X coordinate
@@ -475,15 +564,15 @@ export default class FastNoiseLite {
      * @description 2D/3D warps the input position using current domain warp settings
      * @param {Vector2|Vector3} coord
      */
-    DomainWrap(coord) {
-        switch (this._FractalType) {
+    DomainWarp(coord) {
+        switch (this._DomainWarpFractalType) {
             default:
                 this._DomainWarpSingle(coord);
                 break;
-            case FastNoiseLite.FractalType.DomainWarpProgressive:
+            case FastNoiseLite.DomainWarpFractalType.DomainWarpProgressive:
                 this._DomainWarpFractalProgressive(coord);
                 break;
-            case FastNoiseLite.FractalType.DomainWarpIndependent:
+            case FastNoiseLite.DomainWarpFractalType.DomainWarpIndependent:
                 this._DomainWarpFractalIndependent(coord);
                 break;
         }
@@ -674,6 +763,7 @@ export default class FastNoiseLite {
         return t < 1 ? t : 2 - t;
     }
 
+    //might need another one of these for domain warp fractal <--------------------------------------------------------------------
     /**
      * @private
      */
@@ -686,6 +776,20 @@ export default class FastNoiseLite {
             amp *= gain;
         }
         this._FractalBounding = 1 / ampFractal;
+    }
+
+    /**
+     * @private
+     */
+    _CalculateDomainWarpFractalBounding() {
+        let gain = Math.abs(this._DomainWarpGain);
+        let amp = gain;
+        let ampFractal = 1.0;
+        for (let i = 1; i < this._DomainWarpOctaves; i++) {
+            ampFractal += amp;
+            amp *= gain;
+        }
+        this._DomainWarpFractalBounding = 1 / ampFractal;
     }
 
     /**
@@ -2457,9 +2561,9 @@ export default class FastNoiseLite {
          * @param {Vector2} coord
          */
         let R2 = coord => {
-            let seed = this._Seed;
+            let seed = this._DomainWarpSeed;
             let amp = this._DomainWarpAmp * this._FractalBounding;
-            let freq = this._Frequency;
+            let freq = this._DomainWarpFrequency;
 
             let xs = coord.x;
             let ys = coord.y;
@@ -2484,9 +2588,9 @@ export default class FastNoiseLite {
          * @param {Vector3} coord
          */
         let R3 = coord => {
-            let seed = this._Seed;
+            let seed = this._DomainWarpSeed;
             let amp = this._DomainWarpAmp * this._FractalBounding;
-            let freq = this._Frequency;
+            let freq = this._DomainWarpFrequency;
 
             let xs = coord.x;
             let ys = coord.y;
@@ -2542,11 +2646,11 @@ export default class FastNoiseLite {
          * @param {Vector2} coord
          */
         let R2 = coord => {
-            let seed = this._Seed;
+            let seed = this._DomainWarpSeed;
             let amp = this._DomainWarpAmp * this._FractalBounding;
-            let freq = this._Frequency;
+            let freq = this._DomainWarpFrequency;
 
-            for (let i = 0; i < this._Octaves; i++) {
+            for (let i = 0; i < this._DomainWarpOctaves; i++) {
                 let xs = coord.x;
                 let ys = coord.y;
                 switch (this._DomainWarpType) {
@@ -2565,8 +2669,8 @@ export default class FastNoiseLite {
                 this._DoSingleDomainWarp(seed, amp, freq, coord, xs, ys);
 
                 seed++;
-                amp *= this._Gain;
-                freq *= this._Lacunarity;
+                amp *= this._DomainWarpGain;
+                freq *= this._DomainWarpLacunarity;
             }
         };
 
@@ -2575,11 +2679,11 @@ export default class FastNoiseLite {
          * @param {Vector3} coord
          */
         let R3 = coord => {
-            let seed = this._Seed;
+            let seed = this._DomainWarpSeed;
             let amp = this._DomainWarpAmp * this._FractalBounding;
-            let freq = this._Frequency;
+            let freq = this._DomainWarpFrequency;
 
-            for (let i = 0; i < this._Octaves; i++) {
+            for (let i = 0; i < this._DomainWarpOctaves; i++) {
                 let xs = coord.x;
                 let ys = coord.y;
                 let zs = coord.z;
@@ -2620,8 +2724,8 @@ export default class FastNoiseLite {
                 this._DoSingleDomainWarp(seed, amp, freq, coord, xs, ys, zs);
 
                 seed++;
-                amp *= this._Gain;
-                freq *= this._Lacunarity;
+                amp *= this._DomainWarpGain;
+                freq *= this._DomainWarpLacunarity;
             }
         };
 
@@ -2657,16 +2761,16 @@ export default class FastNoiseLite {
                 default:
                     break;
             }
-            let seed = this._Seed;
+            let seed = this._DomainWarpSeed;
             let amp = this._DomainWarpAmp * this._FractalBounding;
-            let freq = this._Frequency;
+            let freq = this._DomainWarpFrequency;
 
-            for (let i = 0; i < this._Octaves; i++) {
+            for (let i = 0; i < this._DomainWarpOctaves; i++) {
                 this._DoSingleDomainWarp(seed, amp, freq, coord, xs, ys);
 
                 seed++;
-                amp *= this._Gain;
-                freq *= this._Lacunarity;
+                amp *= this._DomainWarpGain;
+                freq *= this._DomainWarpLacunarity;
             }
         };
 
@@ -2712,15 +2816,15 @@ export default class FastNoiseLite {
                     break;
             }
 
-            let seed = this._Seed;
+            let seed = this._DomainWarpSeed;
             let amp = this._DomainWarpAmp * this._FractalBounding;
-            let freq = this._Frequency;
-            for (let i = 0; i < this._Octaves; i++) {
+            let freq = this._DomainWarpFrequency;
+            for (let i = 0; i < this._DomainWarpOctaves; i++) {
                 this._DoSingleDomainWarp(seed, amp, freq, coord, xs, ys, zs);
 
                 seed++;
-                amp *= this._Gain;
-                freq *= this._Lacunarity;
+                amp *= this._DomainWarpGain;
+                freq *= this._DomainWarpLacunarity;
             }
         };
 
